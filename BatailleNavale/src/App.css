@@ -419,3 +419,8 @@ h2 {
     border-right-color: var(--border);
   }
 }
+.cell { width: 30px; height: 30px; border: 1px solid #333; }
+.cell--unknown { background: white; }
+.cell--miss { background: lightblue; }
+.cell--hit { background: red; }
+.cell--ship { background: gray; }

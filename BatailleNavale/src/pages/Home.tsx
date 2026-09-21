@@ -1,20 +1,8 @@
 import "./Home.css";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
-  const handleCreateGame = () => {
-    // Implémentation à venir
-    console.log("Créer une partie");
-  };
-
-  const handleCurrentGames = () => {
-    // Implémentation à venir
-    console.log("Voir les parties en cours");
-  };
-
-  const handleHistory = () => {
-    // Implémentation à venir
-    console.log("Voir l'historique");
-  };
+  const navigate = useNavigate();
 
   return (
     <main className="home">
@@ -37,7 +25,7 @@ function Home() {
         <section className="game-actions">
           <button
             className="action-card action-card-primary"
-            onClick={handleCreateGame}
+            onClick={() => navigate("/games")}
           >
             <div className="action-icon">＋</div>
 
@@ -51,7 +39,7 @@ function Home() {
 
           <button
             className="action-card"
-            onClick={handleCurrentGames}
+            onClick={() => navigate("/games")}
           >
             <div className="action-icon">◉</div>
 
@@ -71,7 +59,7 @@ function Home() {
 
           <button
             className="action-card"
-            onClick={handleHistory}
+            onClick={() => navigate("/history")}
           >
             <div className="action-icon">◷</div>
 

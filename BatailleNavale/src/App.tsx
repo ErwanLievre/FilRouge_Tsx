@@ -1,10 +1,10 @@
 import { Routes, Route } from "react-router-dom";
-import TestBoard from "./pages/TestBoard";
+import Game from "./pages/Game";
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/test-board" element={<TestBoard />} />
+      <Route path="/Game" element={<Game />} />
     </Routes>
   );
 }

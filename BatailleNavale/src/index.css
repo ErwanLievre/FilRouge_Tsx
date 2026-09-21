@@ -150,3 +150,4 @@ code {
 .cell--miss    { background: lightblue; }
 .cell--hit     { background: red; }
 .cell--ship    { background: gray; }
+.cell--sunk { background: black; }

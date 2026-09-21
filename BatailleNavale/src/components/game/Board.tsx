@@ -3,9 +3,10 @@ import Cell, { type CellState } from "./Cell";
 type BoardProps = {
   grid: CellState[][];
   onPlay: (x: number, y: number) => void;
+  playable?: boolean;
 };
 
-export default function Board({ grid, onPlay }: BoardProps) {
+export default function Board({ grid, onPlay, playable = true }: BoardProps) {
   return (
     <div className="board">
       {grid.map((row, y) => (
@@ -15,6 +16,7 @@ export default function Board({ grid, onPlay }: BoardProps) {
               key={`${x}-${y}`}
               state={cellState}
               onClick={() => onPlay(x, y)}
+              disabled={!playable}
             />
           ))}
         </div>

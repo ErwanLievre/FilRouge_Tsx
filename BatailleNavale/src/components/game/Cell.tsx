@@ -1,4 +1,4 @@
-export type CellState = "unknown" | "miss" | "hit" | "ship";
+export type CellState = "unknown" | "miss" | "hit" | "sunk" | "ship";
 
 type CellProps = {
   state: CellState;

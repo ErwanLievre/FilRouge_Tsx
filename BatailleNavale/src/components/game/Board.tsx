@@ -8,9 +8,9 @@ type BoardProps = {
 
 export default function Board({ grid, onPlay, playable = true }: BoardProps) {
   return (
-    <div className="board">
+    <div className="gameboard">
       {grid.map((row, y) => (
-        <div className="board-row" key={y}>
+        <div className="gameboard-row" key={y}>
           {row.map((cellState, x) => (
             <Cell
               key={`${x}-${y}`}

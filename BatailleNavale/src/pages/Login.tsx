@@ -2,7 +2,7 @@ import { type FormEvent, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import ErrorMessage from "../components/ErrorMessage";
 import Loading from "../components/Loading";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext.tsx";
 
 function Login() {
     const { user, isLoading, error, login } = useAuth();

@@ -1,10 +1,6 @@
 export type User = {
-    id: number;
     email: string;
-    profilePicture?: string | null;
 };
-
-export type AuthSession = { token: string; user: User };
 
 export type AuthState = {
     user: User | null;

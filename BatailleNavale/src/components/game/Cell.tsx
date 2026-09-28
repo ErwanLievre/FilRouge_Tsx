@@ -9,7 +9,7 @@ type CellProps = {
 export default function Cell({ state, onClick, disabled }: CellProps) {
   return (
     <button
-      className={`cell cell--${state}`}
+      className={`gamecell gamecell--${state}`}
       onClick={onClick}
       disabled={disabled}
     />

@@ -31,9 +31,9 @@ function History() {
     function getResultLabel(result: Game["result"]) {
         switch (result) {
             case "won":
-                return "Victoire";
+                return "Gagnant : joueur 1";
             case "lost":
-                return "Défaite";
+                return "Gagnant : joueur 2";
             case "cancelled":
                 return "Annulée";
             default:

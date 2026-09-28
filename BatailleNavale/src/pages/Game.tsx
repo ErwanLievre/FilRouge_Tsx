@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Board from "../components/game/Board";
 import { type CellState } from "../components/game/Cell";
-import { getGame, saveGame, finishGame } from "../types/api";
 import type { Ship } from "../types";
+import { finishGame, getGame, saveGame } from "../types/api";
 
 type Orientation = "horizontal" | "vertical";
 type GamePhase = "placing" | "playing" | "won" | "lost";
@@ -134,7 +134,7 @@ export default function Game() {
         setOpponentGrid(nextOpponentGrid);
         setOpponentShips(nextOpponentShips);
         setPhase(nextPhase);
-        setIsPlayerTurn(true); 
+        setIsPlayerTurn(true);
 
         const game = await getGame(gameId);
 
@@ -167,7 +167,7 @@ export default function Game() {
         const targetShips = target === 0 ? myShips : opponentShips;
         const cellState = targetGrid[y][x];
 
-        if (cellState !== "unknown" && cellState !== "ship") return; 
+        if (cellState !== "unknown" && cellState !== "ship") return;
 
         const result = applyShot(targetGrid, targetShips, x, y);
 
@@ -176,7 +176,6 @@ export default function Game() {
         const nextOpponentGrid = target === 1 ? result.grid : opponentGrid;
         const nextOpponentShips = target === 1 ? result.ships : opponentShips;
 
-        
         const outcome: "won" | "lost" = currentPlayer === 0 ? "won" : "lost";
         const finished = areAllShipsSunk(result.ships);
         const nextPhase: GamePhase = finished ? outcome : "playing";
@@ -231,6 +230,8 @@ export default function Game() {
                     grid={placingPlayer === 0 ? myGrid : opponentGrid}
                     onPlay={handlePlaceShip}
                     playable
+                    ships={placingShips}
+                    showShips
                 />
             </div>
         );

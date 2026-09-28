@@ -108,6 +108,11 @@ export async function getHistory(): Promise<Game[]> {
     );
 }
 
+export async function clearHistory(): Promise<void> {
+    const games = getStoredGames().filter(game => game.status !== "ended");
+    saveStoredGames(games);
+}
+
 export async function getGame(
     id: number,
 ): Promise<Game> {

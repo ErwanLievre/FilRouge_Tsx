@@ -1,15 +1,21 @@
-const API_URL = "http://localhost:8000";
+import type { CellState } from "../components/game/Cell";
+import type { Ship } from "../types";
 
-// TEMPORAIRE : à supprimer lorsque le système de connexion sera implémenté
-const DEV_TOKEN = "TOKEN_DE_TEST";
+const STORAGE_KEY = "bataille-navale-games";
 
-function getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem("token") ?? DEV_TOKEN;
+export type GameStatus = "started" | "ended";
 
-    return {
-        Authorization: `Bearer ${token}`,
-    };
-}
+export type GamePhase =
+    | "placing"
+    | "playing"
+    | "won"
+    | "lost";
+
+export type GameResult =
+    | "won"
+    | "lost"
+    | "cancelled"
+    | null;
 
 export interface Player {
     id: number;
@@ -20,137 +26,231 @@ export interface Player {
 export interface Game {
     id: number;
     creatorId: number;
-
     minPlayers: number;
     maxPlayers: number;
 
-    status: "pending" | "started" | "ended";
+    status: GameStatus;
+    phase: GamePhase;
+    result: GameResult;
 
-    state?: string;
+    /*
+     * Grille visible du joueur.
+     *
+     * Pour l'adversaire, cette grille ne contient
+     * jamais "ship".
+     */
+    myGrid: CellState[][];
+
+    myShips: Ship[];
+
+    /*
+     * Grille visible de l'adversaire.
+     *
+     * Elle contient uniquement :
+     * unknown / miss / hit / sunk
+     *
+     * Les positions des bateaux sont dans opponentShips.
+     */
+    opponentGrid: CellState[][];
+
+    /*
+     * Position réelle des bateaux adverses.
+     * Cette donnée est conservée pour le fonctionnement
+     * du jeu mais n'est jamais affichée directement.
+     */
+    opponentShips: Ship[];
 
     currentTurnUserId?: number;
 
-    players?: Player[];
+    isPlayerTurn: boolean;
+    placingIndex: number;
+    orientation: "horizontal" | "vertical";
 
     createdAt: string;
-    startedAt?: string;
-    endedAt?: string;
+    updatedAt: string;
+    endedAt: string | null;
 }
 
-export interface GameResult {
-    gameId: number;
-    winnerId?: number;
-    result: string;
+function getStoredGames(): Game[] {
+    const data = localStorage.getItem(STORAGE_KEY);
+
+    if (!data) {
+        return [];
+    }
+
+    try {
+        return JSON.parse(data) as Game[];
+    } catch {
+        return [];
+    }
+}
+
+function saveStoredGames(games: Game[]): void {
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(games),
+    );
 }
 
 export async function getGames(): Promise<Game[]> {
-    const response = await fetch(
-        `${API_URL}/games/mine`,
-        {
-            headers: getAuthHeaders(),
-        }
+    const games = getStoredGames();
+
+    return games.filter(
+        (game) => game.status === "started",
     );
+}
 
-    if (!response.ok) {
-        throw new Error(
-            `Impossible de récupérer les parties (${response.status})`
-        );
-    }
+export async function getHistory(): Promise<Game[]> {
+    const games = getStoredGames();
 
-    return response.json();
+    return games.filter(
+        (game) => game.status === "ended",
+    );
 }
 
 export async function getGame(
-    id: number
+    id: number,
 ): Promise<Game> {
-    const response = await fetch(
-        `${API_URL}/games/${id}`,
-        {
-            headers: getAuthHeaders(),
-        }
+    const games = getStoredGames();
+
+    const game = games.find(
+        (item) => item.id === id,
     );
 
-    if (!response.ok) {
+    if (!game) {
         throw new Error(
-            `Impossible de récupérer la partie (${response.status})`
+            "Partie introuvable.",
         );
     }
 
-    return response.json();
+    return game;
 }
 
 export async function createGame(
     minPlayers: number,
-    maxPlayers: number
+    maxPlayers: number,
 ): Promise<Game> {
-    const response = await fetch(
-        `${API_URL}/games`,
-        {
-            method: "POST",
+    const games = getStoredGames();
 
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
+    const now =
+        new Date().toISOString();
 
-            body: JSON.stringify({
-                minPlayers,
-                maxPlayers,
-            }),
-        }
-    );
+    const game: Game = {
+        id: Date.now(),
 
-    if (!response.ok) {
-        throw new Error(
-            `Impossible de créer la partie (${response.status})`
-        );
-    }
+        creatorId: 1,
 
-    return response.json();
+        minPlayers,
+        maxPlayers,
+
+        status: "started",
+        phase: "placing",
+        result: null,
+
+        myGrid: [],
+        myShips: [],
+
+        /*
+         * La grille adverse visible commence
+         * entièrement cachée.
+         */
+        opponentGrid: [],
+
+        /*
+         * La flotte réelle sera générée
+         * dans Game.tsx.
+         */
+        opponentShips: [],
+
+        isPlayerTurn: true,
+        placingIndex: 0,
+        orientation: "horizontal",
+
+        createdAt: now,
+        updatedAt: now,
+        endedAt: null,
+    };
+
+    saveStoredGames([
+        ...games,
+        game,
+    ]);
+
+    return game;
 }
 
-export async function invitePlayer(
-    gameId: number,
-    email: string
-): Promise<Game> {
-    const response = await fetch(
-        `${API_URL}/games/${gameId}/invite`,
-        {
-            method: "POST",
+export async function saveGame(
+    game: Game,
+): Promise<void> {
+    const games = getStoredGames();
 
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
-
-            body: JSON.stringify({
-                email,
-            }),
-        }
+    const index = games.findIndex(
+        (item) => item.id === game.id,
     );
 
-    if (!response.ok) {
-        throw new Error(
-            `Impossible d'inviter le joueur (${response.status})`
-        );
+    const updatedGame: Game = {
+        ...game,
+        updatedAt:
+            new Date().toISOString(),
+    };
+
+    if (index === -1) {
+        saveStoredGames([
+            ...games,
+            updatedGame,
+        ]);
+
+        return;
     }
 
-    return response.json();
+    const updatedGames = [...games];
+
+    updatedGames[index] = updatedGame;
+
+    saveStoredGames(updatedGames);
 }
 
-export async function getHistory(): Promise<Game[]> {
-    const response = await fetch(
-        `${API_URL}/games/history`,
-        {
-            headers: getAuthHeaders(),
-        }
-    );
+export async function finishGame(
+    game: Game,
+    result: "won" | "lost",
+): Promise<void> {
+    await saveGame({
+        ...game,
 
-    if (!response.ok) {
-        throw new Error(
-            `Impossible de récupérer l'historique (${response.status})`
-        );
-    }
+        status: "ended",
 
-    return response.json();
+        phase: result,
+
+        result,
+
+        endedAt:
+            new Date().toISOString(),
+    });
+}
+
+/*
+ * Arrêter volontairement une partie.
+ *
+ * Elle est considérée comme terminée,
+ * mais son résultat est "cancelled".
+ */
+export async function cancelGame(
+    game: Game,
+): Promise<void> {
+    await saveGame({
+        ...game,
+
+        status: "ended",
+
+        /*
+         * La phase reste "playing" ou "placing"
+         * dans les données techniques.
+         */
+        phase: game.phase,
+
+        result: "cancelled",
+
+        endedAt:
+            new Date().toISOString(),
+    });
 }

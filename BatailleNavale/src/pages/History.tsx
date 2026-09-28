@@ -1,67 +1,103 @@
 import { useEffect, useState } from "react";
 
 import {
-    getHistory
+    getHistory,
 } from "../types/api";
 
-import type{
+import type {
     Game,
 } from "../types/api";
 
-
 function History() {
-
-    const [games, setGames] = useState<Game[]>([]);
+    const [games, setGames] =
+        useState<Game[]>([]);
 
     useEffect(() => {
-
         async function loadHistory() {
-
             try {
-
-                const data = await getHistory();
+                const data =
+                    await getHistory();
 
                 setGames(data);
-
             } catch (error) {
-
                 console.error(error);
-
             }
-
         }
 
         loadHistory();
-
     }, []);
+
+    function getResultLabel(
+        result: Game["result"],
+    ) {
+        switch (result) {
+            case "won":
+                return "Victoire";
+
+            case "lost":
+                return "Défaite";
+
+            case "cancelled":
+                return "Annulée";
+
+            default:
+                return "Inconnu";
+        }
+    }
 
     return (
         <main>
+            <h1>
+                Historique des parties
+            </h1>
 
-            <h1>Historique des parties</h1>
+            {games.length === 0 && (
+                <p>
+                    Aucune partie terminée.
+                </p>
+            )}
 
             {games.map((game) => (
-
-                <article key={game.id}>
-
+                <article
+                    key={game.id}
+                >
                     <h2>
                         Partie #{game.id}
                     </h2>
 
                     <p>
-                        Statut : {game.status}
+                        Statut :
+                        {" "}
+                        Terminée
+                    </p>
+
+                    <p>
+                        Résultat :
+                        {" "}
+                        {getResultLabel(
+                            game.result,
+                        )}
                     </p>
 
                     <p>
                         Créée le :
                         {" "}
-                        {game.createdAt}
+                        {new Date(
+                            game.createdAt,
+                        ).toLocaleString()}
                     </p>
 
+                    {game.endedAt && (
+                        <p>
+                            Terminée le :
+                            {" "}
+                            {new Date(
+                                game.endedAt,
+                            ).toLocaleString()}
+                        </p>
+                    )}
                 </article>
-
             ))}
-
         </main>
     );
 }

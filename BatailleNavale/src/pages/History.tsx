@@ -4,6 +4,7 @@ import type { Game } from "../types/api";
 
 function History() {
     const [games, setGames] = useState<Game[]>([]);
+    const [showClearModal, setShowClearModal] = useState(false);
 
     useEffect(() => {
         loadHistory();
@@ -18,17 +19,10 @@ function History() {
     }
 
     async function handleClearHistory() {
-        if (!games.length) return;
-
-        const confirmed = window.confirm(
-            "Voulez-vous vraiment supprimer tout l'historique ?\n\nCette action est définitive."
-        );
-
-        if (!confirmed) return;
-
         try {
             await clearHistory();
             setGames([]);
+            setShowClearModal(false);
         } catch (error) {
             console.error(error);
         }
@@ -57,7 +51,7 @@ function History() {
 
                 <button
                     className="secondary-button danger"
-                    onClick={handleClearHistory}
+                    onClick={() => setShowClearModal(true)}
                     disabled={!games.length}
                 >
                     Supprimer l'historique
@@ -96,6 +90,33 @@ function History() {
                         </article>
                     ))}
                 </section>
+            )}
+
+            {showClearModal && (
+                <div className="modal-overlay" onClick={() => setShowClearModal(false)}>
+                    <div className="modal" onClick={event => event.stopPropagation()}>
+                        <h2>Supprimer l'historique ?</h2>
+                        <p>
+                            Cette action supprimera définitivement toutes les parties terminées.
+                        </p>
+
+                        <div className="modal-actions">
+                            <button
+                                className="secondary-button"
+                                onClick={() => setShowClearModal(false)}
+                            >
+                                Annuler
+                            </button>
+
+                            <button
+                                className="secondary-button danger"
+                                onClick={handleClearHistory}
+                            >
+                                Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </main>
     );

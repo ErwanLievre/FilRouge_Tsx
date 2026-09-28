@@ -7,6 +7,7 @@ function Games() {
     const navigate = useNavigate();
     const [games, setGames] = useState<Game[]>([]);
     const [loading, setLoading] = useState(true);
+    const [gameToCancel, setGameToCancel] = useState<Game | null>(null);
 
     useEffect(() => {
         loadGames();
@@ -32,16 +33,13 @@ function Games() {
         }
     }
 
-    async function handleCancelGame(game: Game) {
-        const confirmed = window.confirm(
-            "Voulez-vous vraiment arrêter cette partie ?\n\nElle sera déplacée dans l'historique."
-        );
-
-        if (!confirmed) return;
+    async function handleCancelGame() {
+        if (!gameToCancel) return;
 
         try {
-            await cancelGame(game);
-            setGames(previous => previous.filter(item => item.id !== game.id));
+            await cancelGame(gameToCancel);
+            setGames(previous => previous.filter(item => item.id !== gameToCancel.id));
+            setGameToCancel(null);
         } catch (error) {
             console.error(error);
         }
@@ -73,7 +71,6 @@ function Games() {
                         <article className="game-card" key={game.id}>
                             <div className="game-card-header">
                                 <span>Partie {index + 1}</span>
-                                <span className="game-badge">En cours</span>
                             </div>
 
                             <div className="game-card-info">
@@ -93,7 +90,7 @@ function Games() {
 
                                 <button
                                     className="secondary-button danger"
-                                    onClick={() => handleCancelGame(game)}
+                                    onClick={() => setGameToCancel(game)}
                                 >
                                     Arrêter
                                 </button>
@@ -101,6 +98,31 @@ function Games() {
                         </article>
                     ))}
                 </section>
+            )}
+
+            {gameToCancel && (
+                <div className="modal-overlay" onClick={() => setGameToCancel(null)}>
+                    <div className="modal" onClick={event => event.stopPropagation()}>
+                        <h2>Arrêter la partie ?</h2>
+                        <p>Cette partie sera déplacée dans l'historique.</p>
+
+                        <div className="modal-actions">
+                            <button
+                                className="secondary-button"
+                                onClick={() => setGameToCancel(null)}
+                            >
+                                Annuler
+                            </button>
+
+                            <button
+                                className="secondary-button danger"
+                                onClick={handleCancelGame}
+                            >
+                                Arrêter
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </main>
     );

@@ -1,35 +1,32 @@
-# React + TypeScript + Vite
+# Bataille Navale
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Le front React utilise le serveur générique situé dans `../../game-server`.
+Les comptes, les parties et les états de jeu sont stockés côté serveur ; le
+navigateur ne conserve que le jeton de session (`Bearer`).
 
-Currently, two official plugins are available:
+## Démarrage local
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Dans un terminal :
 
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+cd ../../game-server
+deno task dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Dans un second terminal :
+
+```sh
+npm install
+npm run dev
+```
+
+Le front attend le serveur sur `http://localhost:8000`. Pour utiliser une
+autre adresse, créez un fichier `.env.local` dans ce dossier :
+
+```sh
+VITE_GAME_SERVER_URL=http://localhost:8000
+```
+
+Un joueur crée une partie, invite le compte de son adversaire, puis le
+créateur démarre. Les deux joueurs placent leur flotte à tour de rôle ; les
+tirs et le résultat sont ensuite synchronisés par le serveur.

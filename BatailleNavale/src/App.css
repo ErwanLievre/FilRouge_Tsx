@@ -514,11 +514,116 @@ p {
         padding: 24px;
     }
 }
-.gamecell { width: 30px; height: 30px; border: 1px solid #333; }
-.gamecell--unknown { background: white; }
-.gamecell--miss { background: lightblue; }
-.gamecell--hit { background: red; }
-.gamecell--ship { background: gray; }
+.gameboard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    overflow: hidden;
+    border: 2px solid rgba(56, 184, 213, 0.72);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.gameboard-row {
+    display: flex;
+}
+
+.gamecell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    flex: 0 0 30px;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid rgba(5, 53, 78, 0.34);
+    border-radius: 0;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.13), transparent 55%),
+        #1688ab;
+    transition: filter 120ms ease, background-color 120ms ease;
+}
+
+.gamecell--unknown:hover:not(:disabled) {
+    filter: brightness(1.25);
+}
+
+.gamecell--miss {
+    background: #70bfd0;
+}
+
+.gamecell--ship {
+    background: transparent;
+}
+
+.gamecell--hit {
+    z-index: 3;
+    background: transparent;
+}
+
+.gamecell--sunk {
+    background: #f2c96d;
+}
+
+.gamecell-explosion {
+    width: 23px;
+    height: 23px;
+    overflow: visible;
+    filter: drop-shadow(0 1px 2px rgba(30, 10, 0, 0.65));
+}
+
+.gamecell-explosion-rays {
+    fill: #ff6b35;
+    stroke: #ffd166;
+    stroke-width: 0.8;
+    stroke-linejoin: round;
+}
+
+.gamecell-explosion-core {
+    fill: #fff1a8;
+    stroke: #e64a19;
+    stroke-width: 1.4;
+}
+
+.gameboard-ship {
+    position: absolute;
+    z-index: 2;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.gameboard-ship--sunk {
+    opacity: 0.9;
+}
+
+.gameboard-ship--sunk .gameboard-ship-hull {
+    fill: #405968;
+    stroke: #fff0bd;
+    stroke-width: 2.2;
+}
+
+.gameboard-ship--sunk .gameboard-ship-deck {
+    fill: #d8e2e5;
+    stroke: #ffffff;
+}
+
+.gameboard-ship-hull {
+    fill: #334b5b;
+    stroke: #d9ad55;
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+}
+
+.gameboard-ship-deck {
+    fill: #8296a0;
+    stroke: #dce7e9;
+    stroke-width: 1;
+}
+
+.gameboard-ship-window {
+    fill: #d9ad55;
+}
 
 .games-page {
     width: 100%;

@@ -1,35 +1,46 @@
-# React + TypeScript + Vite
+# Bataille Navale
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Jeu de bataille navale pour deux joueurs sur le même écran, réalisé avec React,
+TypeScript et Vite. Les joueurs partagent l'écran et jouent à tour de rôle : ils
+placent leur flotte, puis tirent sur le plateau adverse. Le premier qui coule
+tous les bateaux de l'autre gagne.
 
-Currently, two official plugins are available:
+## Règles et déroulement
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Connectez-vous ou créez un compte, puis ouvrez **Parties** et choisissez
+  **Nouvelle partie**.
+- La partie se joue sur deux plateaux de 8 lignes et 12 colonnes.
+- Chaque joueur place 8 bateaux, de tailles 2, 2, 3, 3, 3, 4, 4 et 5 cases.
+  Choisissez une orientation horizontale ou verticale, puis cliquez sur une
+  case pour placer le bateau. Les bateaux peuvent se toucher, mais ne peuvent
+  pas se chevaucher ni dépasser du plateau.
+- Le joueur 1 place sa flotte en premier. Ensuite, passez l'écran au joueur 2
+  et cliquez sur **Je suis le Joueur 2, je suis prêt**. Le plateau du joueur 1
+  est caché pendant le placement de la seconde flotte.
+- Une fois les deux flottes placées, les joueurs tirent chacun leur tour sur
+  une case du plateau adverse. Les tirs déjà effectués ne peuvent pas être
+  rejoués. Les cases indiquent les tirs manqués, les bateaux touchés et les
+  bateaux coulés.
+- La partie se termine quand toute la flotte d'un joueur a été coulée. Les
+  parties terminées apparaissent dans **Historique** ; une partie en cours peut
+  être arrêtée depuis **Parties**.
 
-## React Compiler
+## Lancer l'application
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+Installez les dépendances et lancez le serveur de développement depuis le
+dossier du projet :
 
-Note: This will impact Vite dev & build performances.
-You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Vite affiche l'adresse locale à ouvrir dans le navigateur (généralement
+`http://localhost:5173`).
+
+## Données
+
+Les comptes et les parties sont enregistrés dans le stockage local du
+navigateur. Les données restent donc sur le navigateur utilisé et ne sont pas
+synchronisées entre appareils. Effacer les données du navigateur supprimera
+également les comptes et parties enregistrés.

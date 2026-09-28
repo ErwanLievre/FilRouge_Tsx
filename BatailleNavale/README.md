@@ -1,32 +1,46 @@
 # Bataille Navale
 
-Le front React utilise le serveur générique situé dans `../../game-server`.
-Les comptes, les parties et les états de jeu sont stockés côté serveur ; le
-navigateur ne conserve que le jeton de session (`Bearer`).
+Jeu de bataille navale pour deux joueurs sur le même écran, réalisé avec React,
+TypeScript et Vite. Les joueurs partagent l'écran et jouent à tour de rôle : ils
+placent leur flotte, puis tirent sur le plateau adverse. Le premier qui coule
+tous les bateaux de l'autre gagne.
 
-## Démarrage local
+## Règles et déroulement
 
-Dans un terminal :
+- Connectez-vous ou créez un compte, puis ouvrez **Parties** et choisissez
+  **Nouvelle partie**.
+- La partie se joue sur deux plateaux de 8 lignes et 12 colonnes.
+- Chaque joueur place 8 bateaux, de tailles 2, 2, 3, 3, 3, 4, 4 et 5 cases.
+  Choisissez une orientation horizontale ou verticale, puis cliquez sur une
+  case pour placer le bateau. Les bateaux peuvent se toucher, mais ne peuvent
+  pas se chevaucher ni dépasser du plateau.
+- Le joueur 1 place sa flotte en premier. Ensuite, passez l'écran au joueur 2
+  et cliquez sur **Je suis le Joueur 2, je suis prêt**. Le plateau du joueur 1
+  est caché pendant le placement de la seconde flotte.
+- Une fois les deux flottes placées, les joueurs tirent chacun leur tour sur
+  une case du plateau adverse. Les tirs déjà effectués ne peuvent pas être
+  rejoués. Les cases indiquent les tirs manqués, les bateaux touchés et les
+  bateaux coulés.
+- La partie se termine quand toute la flotte d'un joueur a été coulée. Les
+  parties terminées apparaissent dans **Historique** ; une partie en cours peut
+  être arrêtée depuis **Parties**.
 
-```sh
-cd ../../game-server
-deno task dev
-```
+## Lancer l'application
 
-Dans un second terminal :
+Installez les dépendances et lancez le serveur de développement depuis le
+dossier du projet :
 
 ```sh
 npm install
 npm run dev
 ```
 
-Le front attend le serveur sur `http://localhost:8000`. Pour utiliser une
-autre adresse, créez un fichier `.env.local` dans ce dossier :
+Vite affiche l'adresse locale à ouvrir dans le navigateur (généralement
+`http://localhost:5173`).
 
-```sh
-VITE_GAME_SERVER_URL=http://localhost:8000
-```
+## Données
 
-Un joueur crée une partie, invite le compte de son adversaire, puis le
-créateur démarre. Les deux joueurs placent leur flotte à tour de rôle ; les
-tirs et le résultat sont ensuite synchronisés par le serveur.
+Les comptes et les parties sont enregistrés dans le stockage local du
+navigateur. Les données restent donc sur le navigateur utilisé et ne sont pas
+synchronisées entre appareils. Effacer les données du navigateur supprimera
+également les comptes et parties enregistrés.

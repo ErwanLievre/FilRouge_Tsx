@@ -1,13 +1,67 @@
+import { useEffect, useState } from "react";
+
+import {
+    getHistory
+} from "../types/api";
+
+import type{
+    Game,
+} from "../types/api";
+
+
 function History() {
+
+    const [games, setGames] = useState<Game[]>([]);
+
+    useEffect(() => {
+
+        async function loadHistory() {
+
+            try {
+
+                const data = await getHistory();
+
+                setGames(data);
+
+            } catch (error) {
+
+                console.error(error);
+
+            }
+
+        }
+
+        loadHistory();
+
+    }, []);
+
     return (
-        <main className="page">
-            <section className="card">
-                <h1>Historique</h1>
-                <p>
-                    L'historique des parties terminées sera connecté au
-                    backend lorsque celui-ci sera disponible.
-                </p>
-            </section>
+        <main>
+
+            <h1>Historique des parties</h1>
+
+            {games.map((game) => (
+
+                <article key={game.id}>
+
+                    <h2>
+                        Partie #{game.id}
+                    </h2>
+
+                    <p>
+                        Statut : {game.status}
+                    </p>
+
+                    <p>
+                        Créée le :
+                        {" "}
+                        {game.createdAt}
+                    </p>
+
+                </article>
+
+            ))}
+
         </main>
     );
 }

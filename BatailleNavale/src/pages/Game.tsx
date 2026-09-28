@@ -3,15 +3,19 @@ import Board from "../components/game/Board";
 import { type CellState } from "../components/game/Cell";
 import { type Ship } from "../types";
 
-type GamePhase = "placing" | "playing" | "won" | "lost";
+type GamePhase = "placing" | "handoff" | "playing" | "finished";
+type PlayerIndex = 0 | 1;
+type Orientation = "horizontal" | "vertical";
 
-function areAllShipsSunk(ships: Ship[]): boolean {
-  return ships.every((ship) => ship.hits === ship.cells.length);
-}
+type PlayerState = {
+  grid: CellState[][];
+  ships: Ship[];
+};
 
 const ROWS = 8;
 const COLS = 12;
 
+// 2 bateaux de taille 2, 3 de taille 3, 2 de taille 4, 1 de taille 5
 const FLEET_SIZES = [2, 2, 3, 3, 3, 4, 4, 5];
 
 function createEmptyGrid(): CellState[][] {
@@ -20,17 +24,22 @@ function createEmptyGrid(): CellState[][] {
   );
 }
 
+function createPlayer(): PlayerState {
+  return { grid: createEmptyGrid(), ships: [] };
+}
+
 function getShipCells(
   x: number,
   y: number,
   size: number,
-  orientation: "horizontal" | "vertical"
+  orientation: Orientation
 ): { x: number; y: number }[] {
   const cells: { x: number; y: number }[] = [];
   for (let i = 0; i < size; i++) {
-    const cx = orientation === "horizontal" ? x + i : x;
-    const cy = orientation === "horizontal" ? y : y + i;
-    cells.push({ x: cx, y: cy });
+    cells.push({
+      x: orientation === "horizontal" ? x + i : x,
+      y: orientation === "horizontal" ? y : y + i,
+    });
   }
   return cells;
 }
@@ -41,51 +50,11 @@ function isValidPlacement(cells: { x: number; y: number }[], grid: CellState[][]
   );
 }
 
-function tryPlaceShip(size: number, occupied: boolean[][]): { x: number; y: number }[] | null {
-  const horizontal = Math.random() < 0.5;
-  const maxX = horizontal ? COLS - size : COLS - 1;
-  const maxY = horizontal ? ROWS - 1 : ROWS - size;
-  if (maxX < 0 || maxY < 0) return null;
-
-  const startX = Math.floor(Math.random() * (maxX + 1));
-  const startY = Math.floor(Math.random() * (maxY + 1));
-
-  const cells: { x: number; y: number }[] = [];
-  for (let i = 0; i < size; i++) {
-    const x = horizontal ? startX + i : startX;
-    const y = horizontal ? startY : startY + i;
-    if (occupied[y][x]) return null;
-    cells.push({ x, y });
-  }
-  return cells;
-}
-
-// Placement bot
-function placeFleet(): { grid: CellState[][]; ships: Ship[] } {
-  const grid = createEmptyGrid();
-  const occupied: boolean[][] = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
-  const ships: Ship[] = [];
-
-  FLEET_SIZES.forEach((size, index) => {
-    let cells: { x: number; y: number }[] | null = null;
-    while (!cells) {
-      cells = tryPlaceShip(size, occupied);
-    }
-    cells.forEach(({ x, y }) => {
-      occupied[y][x] = true;
-      grid[y][x] = "ship";
-    });
-    ships.push({ id: index, cells, hits: 0 });
-  });
-
-  return { grid, ships };
-}
-
 function findShipAt(ships: Ship[], x: number, y: number): Ship | null {
   return ships.find((ship) => ship.cells.some((c) => c.x === x && c.y === y)) ?? null;
 }
 
-function applyShot(grid: CellState[][], ships: Ship[], x: number, y: number) {
+function applyShot(grid: CellState[][], ships: Ship[], x: number, y: number): PlayerState {
   const targetShip = findShipAt(ships, x, y);
   const nextGrid = grid.map((row) => [...row]);
 
@@ -108,119 +77,146 @@ function applyShot(grid: CellState[][], ships: Ship[], x: number, y: number) {
   return { grid: nextGrid, ships: nextShips };
 }
 
+function areAllShipsSunk(ships: Ship[]): boolean {
+  return ships.every((ship) => ship.hits === ship.cells.length);
+}
 
-//att bot
-function pickRandomTarget(grid: CellState[][]): { x: number; y: number } | null {
-  const candidates: { x: number; y: number }[] = [];
-  grid.forEach((row, y) =>
-    row.forEach((state, x) => {
-      if (state === "unknown" || state === "ship") candidates.push({ x, y });
-    })
-  );
-  if (candidates.length === 0) return null;
-  return candidates[Math.floor(Math.random() * candidates.length)];
+function hideShips(grid: CellState[][]): CellState[][] {
+  return grid.map((row) => row.map((state) => (state === "ship" ? "unknown" : state)));
 }
 
 export default function Game() {
   const [phase, setPhase] = useState<GamePhase>("placing");
-
+  const [players, setPlayers] = useState<[PlayerState, PlayerState]>(() => [
+    createPlayer(),
+    createPlayer(),
+  ]);
+  const [currentPlayer, setCurrentPlayer] = useState<PlayerIndex>(0);
   const [placingIndex, setPlacingIndex] = useState(0);
-  const [orientation, setOrientation] = useState<"horizontal" | "vertical">("horizontal");
-  const [myGrid, setMyGrid] = useState<CellState[][]>(createEmptyGrid());
-  const [myShips, setMyShips] = useState<Ship[]>([]);
+  const [orientation, setOrientation] = useState<Orientation>("horizontal");
+  const [winner, setWinner] = useState<PlayerIndex | null>(null);
 
-  const [opponentFleet] = useState(() => placeFleet());
-  const [opponentGrid, setOpponentGrid] = useState<CellState[][]>(createEmptyGrid());
-  const [opponentShips, setOpponentShips] = useState<Ship[]>(opponentFleet.ships);
-
-  const [isPlayerTurn, setIsPlayerTurn] = useState(true);
+  function updatePlayer(index: PlayerIndex, newState: PlayerState) {
+    setPlayers((prev) => (index === 0 ? [newState, prev[1]] : [prev[0], newState]));
+  }
 
   function handlePlaceShip(x: number, y: number) {
     if (phase !== "placing") return;
 
+    const me = players[currentPlayer];
     const size = FLEET_SIZES[placingIndex];
     const cells = getShipCells(x, y, size, orientation);
 
-    if (!isValidPlacement(cells, myGrid)) return; 
+    if (!isValidPlacement(cells, me.grid)) return; 
 
-    const nextGrid = myGrid.map((row) => [...row]);
+    const nextGrid = me.grid.map((row) => [...row]);
     cells.forEach(({ x: cx, y: cy }) => (nextGrid[cy][cx] = "ship"));
-    setMyGrid(nextGrid);
-
     const newShip: Ship = { id: placingIndex, cells, hits: 0 };
-    setMyShips((prev) => [...prev, newShip]);
+    updatePlayer(currentPlayer, { grid: nextGrid, ships: [...me.ships, newShip] });
 
-    if (placingIndex + 1 === FLEET_SIZES.length) {
-      setPhase("playing"); 
-    } else {
+    if (placingIndex + 1 < FLEET_SIZES.length) {
       setPlacingIndex(placingIndex + 1);
-    }
-  }
-
-  function toggleOrientation() {
-    setOrientation((prev) => (prev === "horizontal" ? "vertical" : "horizontal"));
-  }
-
-  function handleAttack(x: number, y: number) {
-    if (phase !== "playing") return;
-    if (!isPlayerTurn || opponentGrid[y][x] !== "unknown") return;
-
-    const result = applyShot(opponentGrid, opponentShips, x, y);
-    setOpponentGrid(result.grid);
-    setOpponentShips(result.ships);
-
-    if (areAllShipsSunk(result.ships)) {
-      setPhase("won");
       return;
     }
 
-    setIsPlayerTurn(false);
+    if (currentPlayer === 0) {
+      setPhase("handoff"); 
+    } else {
+      setCurrentPlayer(0); 
+      setPhase("playing");
+    }
+  }
 
-    setTimeout(() => {
-      const target = pickRandomTarget(myGrid);
-      if (!target) return;
-      const botResult = applyShot(myGrid, myShips, target.x, target.y);
-      setMyGrid(botResult.grid);
-      setMyShips(botResult.ships);
+  function startPlayer2Placement() {
+    setCurrentPlayer(1);
+    setPlacingIndex(0);
+    setOrientation("horizontal");
+    setPhase("placing");
+  }
 
-      if (areAllShipsSunk(botResult.ships)) {
-        setPhase("lost");
-        return;
-      }
+  function handleAttack(targetIndex: PlayerIndex, x: number, y: number) {
+    if (phase !== "playing" || targetIndex === currentPlayer) return;
 
-      setIsPlayerTurn(true);
-    }, 600);
+    const target = players[targetIndex];
+    const cellState = target.grid[y][x];
+    if (cellState !== "unknown" && cellState !== "ship") return; 
+
+    const result = applyShot(target.grid, target.ships, x, y);
+    updatePlayer(targetIndex, result);
+
+    if (areAllShipsSunk(result.ships)) {
+      setWinner(currentPlayer);
+      setPhase("finished");
+      return;
+    }
+
+    setCurrentPlayer(targetIndex);
+  }
+
+  function resetGame() {
+    setPhase("placing");
+    setPlayers([createPlayer(), createPlayer()]);
+    setCurrentPlayer(0);
+    setPlacingIndex(0);
+    setOrientation("horizontal");
+    setWinner(null);
   }
 
   if (phase === "placing") {
     const currentSize = FLEET_SIZES[placingIndex];
     return (
       <div style={{ padding: "20px" }}>
-        <h2>Place tes bateaux</h2>
+        <h2>Joueur {currentPlayer + 1} : place tes bateaux</h2>
+        <p>L'autre joueur ne doit pas regarder l'écran.</p>
         <p>
-          Bateau {placingIndex + 1} / {FLEET_SIZES.length} — taille {currentSize} —
-          orientation : {orientation === "horizontal" ? "horizontale" : "verticale"}
+          Bateau {placingIndex + 1} / {FLEET_SIZES.length} — taille {currentSize} — orientation :{" "}
+          {orientation === "horizontal" ? "horizontale" : "verticale"}
         </p>
-        <button onClick={toggleOrientation}>Changer l'orientation</button>
-        <Board grid={myGrid} onPlay={handlePlaceShip} playable={true} />
+        <button
+          onClick={() =>
+            setOrientation((prev) => (prev === "horizontal" ? "vertical" : "horizontal"))
+          }
+        >
+          Changer l'orientation
+        </button>
+        <Board grid={players[currentPlayer].grid} onPlay={handlePlaceShip} playable={true} />
+      </div>
+    );
+  }
+
+  if (phase === "handoff") {
+    return (
+      <div style={{ padding: "20px" }}>
+        <h2>Joueur 1 a placé ses bateaux</h2>
+        <p>Passe l'écran au Joueur 2. Le plateau du Joueur 1 est caché.</p>
+        <button onClick={startPlayer2Placement}>Je suis le Joueur 2, je suis prêt</button>
       </div>
     );
   }
 
   return (
     <div style={{ padding: "20px" }}>
-      {phase === "won" && <h1 style={{ color: "green" }}>🎉 Victoire !</h1>}
-      {phase === "lost" && <h1 style={{ color: "red" }}>💀 Défaite...</h1>}
+      {phase === "finished" && winner !== null ? (
+        <>
+          <h1 style={{ color: "green" }}>🎉 Le Joueur {winner + 1} a gagné !</h1>
+          <button onClick={resetGame}>Rejouer</button>
+        </>
+      ) : (
+        <h2>Au tour du Joueur {currentPlayer + 1} : clique sur le plateau adverse</h2>
+      )}
 
-      <h2>Ta grille</h2>
-      <Board grid={myGrid} onPlay={() => {}} playable={false} />
-
-      <h2>Grille adverse {isPlayerTurn && phase === "playing" ? "(à toi de jouer)" : ""}</h2>
-      <Board
-        grid={opponentGrid}
-        onPlay={handleAttack}
-        playable={isPlayerTurn && phase === "playing"}
-      />
+      <div style={{ display: "flex", gap: "40px", flexWrap: "wrap" }}>
+        {([0, 1] as PlayerIndex[]).map((i) => (
+          <div key={i}>
+            <h3>Plateau du Joueur {i + 1}</h3>
+            <Board
+              grid={phase === "finished" ? players[i].grid : hideShips(players[i].grid)}
+              onPlay={(x, y) => handleAttack(i, x, y)}
+              playable={phase === "playing" && i !== currentPlayer}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

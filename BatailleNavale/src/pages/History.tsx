@@ -11,15 +11,14 @@ function History() {
 
     async function loadHistory() {
         try {
-            const data = await getHistory();
-            setGames(data);
+            setGames(await getHistory());
         } catch (error) {
             console.error(error);
         }
     }
 
     async function handleClearHistory() {
-        if (games.length === 0) return;
+        if (!games.length) return;
 
         const confirmed = window.confirm(
             "Voulez-vous vraiment supprimer tout l'historique ?\n\nCette action est définitive."
@@ -49,33 +48,55 @@ function History() {
     }
 
     return (
-        <main>
-            <h1>Historique des parties</h1>
+        <main className="games-page">
+            <div className="page-header">
+                <div>
+                    <h1>Historique</h1>
+                    <p>Vos anciennes parties</p>
+                </div>
 
-            <button onClick={handleClearHistory} disabled={games.length === 0}>
-                Supprimer tout l'historique
-            </button>
+                <button
+                    className="secondary-button danger"
+                    onClick={handleClearHistory}
+                    disabled={!games.length}
+                >
+                    Supprimer l'historique
+                </button>
+            </div>
 
-            {games.length === 0 && <p>Aucune partie terminée.</p>}
+            {games.length === 0 ? (
+                <div className="empty-state">
+                    <h2>Aucune partie terminée</h2>
+                    <p>Vos parties terminées apparaîtront ici.</p>
+                </div>
+            ) : (
+                <section className="games-grid">
+                    {games.map((game, index) => (
+                        <article className="game-card" key={game.id}>
+                            <div className="game-card-header">
+                                <span>Partie {index + 1}</span>
+                                <span className={`game-badge ${game.result}`}>
+                                    {getResultLabel(game.result)}
+                                </span>
+                            </div>
 
-            {games.map(game => (
-                <article key={game.id}>
-                    <h2>Partie #{game.id}</h2>
-                    <p>Statut : Terminée</p>
-                    <p>Résultat : {getResultLabel(game.result)}</p>
-                    <p>
-                        Créée le :{" "}
-                        {new Date(game.createdAt).toLocaleString()}
-                    </p>
+                            <div className="game-card-info">
+                                <p>
+                                    <strong>Début</strong>
+                                    {new Date(game.createdAt).toLocaleString()}
+                                </p>
 
-                    {game.endedAt && (
-                        <p>
-                            Terminée le :{" "}
-                            {new Date(game.endedAt).toLocaleString()}
-                        </p>
-                    )}
-                </article>
-            ))}
+                                {game.endedAt && (
+                                    <p>
+                                        <strong>Fin</strong>
+                                        {new Date(game.endedAt).toLocaleString()}
+                                    </p>
+                                )}
+                            </div>
+                        </article>
+                    ))}
+                </section>
+            )}
         </main>
     );
 }

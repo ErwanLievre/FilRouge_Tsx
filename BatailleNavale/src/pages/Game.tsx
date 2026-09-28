@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Board from "../components/game/Board";
 import { type CellState } from "../components/game/Cell";
-import { getGame, saveGame, finishGame } from "../types/api";
 import type { Ship } from "../types";
+import { finishGame, getGame, saveGame } from "../types/api";
 
 type Orientation = "horizontal" | "vertical";
 type GamePhase = "placing" | "playing" | "won" | "lost";
@@ -274,7 +274,13 @@ export default function Game() {
                     {orientation === "horizontal" ? "horizontal" : "vertical"}
                 </p>
                 <button onClick={toggleOrientation}>Changer l'orientation</button>
-                <Board grid={myGrid} onPlay={handlePlaceShip} playable />
+                <Board
+                    grid={myGrid}
+                    onPlay={handlePlaceShip}
+                    playable
+                    ships={myShips}
+                    showShips
+                />
             </div>
         );
     }
@@ -285,7 +291,13 @@ export default function Game() {
             {phase === "lost" && <h1>💀 Défaite...</h1>}
 
             <h2>Ta grille</h2>
-            <Board grid={myGrid} onPlay={() => {}} playable={false} />
+            <Board
+                grid={myGrid}
+                onPlay={() => {}}
+                playable={false}
+                ships={myShips}
+                showShips
+            />
 
             <h2>
                 Grille adverse {phase === "playing" && isPlayerTurn ? "(à toi de jouer)" : ""}
@@ -295,6 +307,8 @@ export default function Game() {
                 grid={opponentGrid}
                 onPlay={handleAttack}
                 playable={phase === "playing" && isPlayerTurn}
+                ships={opponentShips}
+                showShips
             />
         </div>
     );

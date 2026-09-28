@@ -94,22 +94,3 @@ a {
 #root {
     min-height: 100vh;
 }
-
-.gameboard {
-  display: flex;
-  flex-direction: column;
-}
-.gameboard-row {
-  display: flex;
-}
-.gamecell {
-  width: 30px;
-  height: 30px;
-  border: 1px solid #333;
-}
-
-.gamecell--unknown { background: white; }
-.gamecell--miss    { background: lightblue; }
-.gamecell--hit     { background: red; }
-.gamecell--ship    { background: gray; }
-.gamecell--sunk { background: black; }

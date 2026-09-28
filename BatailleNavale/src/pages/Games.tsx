@@ -1,101 +1,129 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getGames, createGame, cancelGame } from "../types/api";
+import type { Game } from "../types/api";
 
-import {
-    getGames,
-    createGame
-} from "../types/api";
-
-import type { 
-    Game
-} from "../types/api";
 function Games() {
-
+    const navigate = useNavigate();
     const [games, setGames] = useState<Game[]>([]);
     const [loading, setLoading] = useState(true);
+    const [gameToCancel, setGameToCancel] = useState<Game | null>(null);
 
     useEffect(() => {
         loadGames();
     }, []);
 
     async function loadGames() {
-
         try {
-            const data = await getGames();
-
-            setGames(data);
-
+            setGames(await getGames());
         } catch (error) {
-
             console.error(error);
-
         } finally {
-
             setLoading(false);
-
         }
     }
 
     async function handleCreateGame() {
-
         try {
-
             const game = await createGame(2, 4);
-
-            setGames((previousGames) => [
-                ...previousGames,
-                game
-            ]);
-
+            setGames(previous => [...previous, game]);
+            navigate(`/game/${game.id}`);
         } catch (error) {
-
             console.error(error);
-
         }
     }
 
-    if (loading) {
-        return <p>Chargement...</p>;
+    async function handleCancelGame() {
+        if (!gameToCancel) return;
+
+        try {
+            await cancelGame(gameToCancel);
+            setGames(previous => previous.filter(item => item.id !== gameToCancel.id));
+            setGameToCancel(null);
+        } catch (error) {
+            console.error(error);
+        }
     }
 
+    if (loading) return <p>Chargement...</p>;
+
     return (
-        <main>
+        <main className="games-page">
+            <div className="page-header">
+                <div>
+                    <h1>Parties</h1>
+                    <p>Vos parties en cours</p>
+                </div>
 
-            <h1>Parties</h1>
+                <button className="primary-button" onClick={handleCreateGame}>
+                    + Nouvelle partie
+                </button>
+            </div>
 
-            <button onClick={handleCreateGame}>
-                Créer une partie
-            </button>
+            {games.length === 0 ? (
+                <div className="empty-state">
+                    <h2>Aucune partie en cours</h2>
+                    <p>Créez une nouvelle partie pour commencer.</p>
+                </div>
+            ) : (
+                <section className="games-grid">
+                    {games.map((game, index) => (
+                        <article className="game-card" key={game.id}>
+                            <div className="game-card-header">
+                                <span>Partie {index + 1}</span>
+                            </div>
 
-            <section>
+                            <div className="game-card-info">
+                                <p>
+                                    <strong>Début</strong>
+                                    {new Date(game.createdAt).toLocaleString()}
+                                </p>
+                            </div>
 
-                {games.map((game) => (
+                            <div className="game-card-actions">
+                                <button
+                                    className="primary-button"
+                                    onClick={() => navigate(`/game/${game.id}`)}
+                                >
+                                    Reprendre
+                                </button>
 
-                    <article key={game.id}>
+                                <button
+                                    className="secondary-button danger"
+                                    onClick={() => setGameToCancel(game)}
+                                >
+                                    Arrêter
+                                </button>
+                            </div>
+                        </article>
+                    ))}
+                </section>
+            )}
 
-                        <h2>
-                            Partie #{game.id}
-                        </h2>
+            {gameToCancel && (
+                <div className="modal-overlay" onClick={() => setGameToCancel(null)}>
+                    <div className="modal" onClick={event => event.stopPropagation()}>
+                        <h2>Arrêter la partie ?</h2>
+                        <p>Cette partie sera déplacée dans l'historique.</p>
 
-                        <p>
-                            Joueurs :
-                            {" "}
-                            {game.minPlayers}
-                            {" - "}
-                            {game.maxPlayers}
-                        </p>
+                        <div className="modal-actions">
+                            <button
+                                className="secondary-button"
+                                onClick={() => setGameToCancel(null)}
+                            >
+                                Annuler
+                            </button>
 
-                        <p>
-                            Statut :
-                            {" "}
-                            {game.status}
-                        </p>
-
-                    </article>
-
-                ))}
-
-            </section>
-
+                            <button
+                                className="secondary-button danger"
+                                onClick={handleCancelGame}
+                            >
+                                Arrêter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </main>
     );
 }
